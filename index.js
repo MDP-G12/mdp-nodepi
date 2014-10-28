@@ -5,9 +5,9 @@ var SERIAL_PORT = "/dev/ttyACM0"
 var BAUDRATE = 115200
 
 var HOST = '0.0.0.0';
-var PORT = 8080;
+var PORT = process.env.PORT || 8080;
 
-var remoteSock = undefined;
+var remoteSocks = [];
 
 var serialPort = new serialport.SerialPort(SERIAL_PORT, {
   baudrate: BAUDRATE,
@@ -16,31 +16,42 @@ var serialPort = new serialport.SerialPort(SERIAL_PORT, {
 
 serialPort.open(function (error) {
   if(error) {
-    console.log('Serial Port failed to open: ' + error);
+    console.log('SERIAL failed to open: ' + error);
   }
   else {
-    console.log('Serial Port listening on ' + SERIAL_PORT + ':' + BAUDRATE);
+    console.log('SERIAL listening on ' + SERIAL_PORT + ':' + BAUDRATE);
     serialPort.on('data', function(data) {
-      console.log('Serial Port data received: ' + data);
-      remoteSock.write(results);
+      data = data.toString().trim().replace(/(\r\n|\n|\r)/gm,"");
+      console.log('SERIAL Data: ' + data);
+      for(var i = 0; i < remoteSocks.length; i++) {
+        remoteSocks[i].write(data+"\n");
+      }
     });
   }
 });
 
 Net.createServer(function(sock) {
-  console.log('CONNECTED: ' + sock.remoteAddress +':'+ sock.remotePort);
-  remoteSock = sock;
+  console.log('SOCK CONNECTED: ' + sock.remoteAddress +':'+ sock.remotePort);
+  remoteSocks.push(sock);
+
   sock.on('data', function(data) {
-    console.log('DATA ' + sock.remoteAddress + ': ' + data);
-    serialPort.write(data, function(err, results) {
-      console.log('Serial Port results ' + results);
-    });
+    data = data.toString().trim().replace(/(\r\n|\n|\r)/gm,"");
+    console.log('SOCK DATA ' + sock.remoteAddress + ': ' + data);
+
+    if(data.indexOf("AND") > -1) {
+      for(var i = 0; i < remoteSocks.length; i++) {
+        remoteSocks[i].write(data+"\n");
+      }
+    }
+    else {
+      serialPort.write(data, function(err, results) {});
+    }
   });
 
   sock.on('close', function(data) {
-    console.log('CLOSED: ' + sock.remoteAddress + ':'+ sock.remotePort);
+    console.log('SOCK CLOSED: ' + sock.remoteAddress + ':'+ sock.remotePort);
   });
 
 }).listen(PORT, HOST);
 
-console.log('Wifi Socket listening on ' + HOST +':'+ PORT);
+console.log('SOCK listening on ' + HOST +':'+ PORT);
