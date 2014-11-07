@@ -1,13 +1,13 @@
 {
-  "name": "node-pi",
+  "name": "mdp-nodepi",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC",
+  "author": "Ciel",
+  "license": "MIT",
   "dependencies": {
     "serialport": "^1.4.6"
   }
